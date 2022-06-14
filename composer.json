@@ -1,0 +1,23 @@
+{
+  "name": "janfish/swoft-module",
+  "type": "library",
+  "license": "Apache-2.0",
+  "description": "Swoft Module",
+  "autoload": {
+    "psr-4": {
+      "Swoft\\Module\\": "src/"
+    }
+  },
+  "authors": [
+    {
+      "name": "Robert Zeng",
+      "email": "zeng444@163.com"
+    }
+  ],
+  "require": {
+    "php": ">=7.1",
+    "swoft/framework": "~2.0.0",
+    "swoft/bean": "~2.0.0",
+    "swoft/config": "~2.0.0"
+  }
+}
