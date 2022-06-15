@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Swoft\Module;
+namespace Swoft\Module\Exception;
 
 /**
  * Author:Robert
