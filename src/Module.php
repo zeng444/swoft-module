@@ -45,11 +45,16 @@ class Module implements ModuleInterface
     /**
      * @param string $module
      * @param string $bean
-     * @return mixed|object
+     * @return mixed
+     * @throws ModuleException
      */
     public function getBean(string $module, string $bean)
     {
-        return Swoft::getBean($module . '.' . $bean);
+        $bean = $module . '.' . $bean;
+        if (!Swoft::hasBean($bean)) {
+            throw new ModuleException('Bean not exit');
+        }
+        return Swoft::getBean($bean);
     }
 
     /**
