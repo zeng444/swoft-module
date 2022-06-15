@@ -45,6 +45,17 @@ class Module implements ModuleInterface
     /**
      * @param string $module
      * @param string $bean
+     * @return bool
+     */
+    public function hasBean(string $module, string $bean): bool
+    {
+        $bean = $module . '.' . $bean;
+        return Swoft::hasBean($bean);
+    }
+
+    /**
+     * @param string $module
+     * @param string $bean
      * @return mixed
      * @throws ModuleException
      */
