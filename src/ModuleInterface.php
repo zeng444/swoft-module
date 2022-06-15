@@ -2,7 +2,6 @@
 
 namespace Swoft\Module;
 
-use Swoft\Bean\Annotation\Mapping\Bean;
 
 /**
  * Author:Robert

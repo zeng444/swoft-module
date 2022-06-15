@@ -2,8 +2,11 @@
 
 namespace Swoft\Module;
 
+use Swoft;
+use Swoft\Bean\BeanFactory;
 use Swoft\Bean\Annotation\Mapping\Bean;
 use Swoft\Config\Annotation\Mapping\Config;
+use Swoft\Module\Exception\ModuleException;
 
 /**
  * Author:Robert
@@ -12,7 +15,7 @@ use Swoft\Config\Annotation\Mapping\Config;
  * @Bean()
  * @package Swoft\Module
  */
-class Module implements ModuleInterface
+class Module
 {
 
     /**
@@ -20,6 +23,14 @@ class Module implements ModuleInterface
      * @var string
      */
     protected $path = "@app/Module/";
+
+    /**
+     * @return void
+     */
+    public function init(): void
+    {
+        $this->loadBean();
+    }
 
 
     /**
@@ -33,11 +44,21 @@ class Module implements ModuleInterface
 
     /**
      * @param string $module
+     * @param string $bean
+     * @return mixed|object
+     */
+    public function getBean(string $module, string $bean)
+    {
+        return Swoft::getBean($module . '.' . $bean);
+    }
+
+    /**
+     * @param string $module
      * @param string $logic
      * @return mixed|object
      * @throws ModuleException
      */
-    public function getBean(string $module, string $logic)
+    public function getLogic(string $module, string $logic)
     {
         $module = ucwords($module);
         if (!$this->exist($module)) {
@@ -47,8 +68,9 @@ class Module implements ModuleInterface
         if (!class_exists($class)) {
             throw new ModuleException("module class not exist");
         }
-        return \Swoft::getBean($class);
+        return Swoft::getBean($class);
     }
+
 
     /**
      * @param string $module
@@ -60,9 +82,28 @@ class Module implements ModuleInterface
      */
     public function call(string $module, string $logic, string $method, $args)
     {
-        return ($this->getBean($module, $logic))->$method(...(!is_array($args) ? [$args] : $args));
+        return ($this->getLogic($module, $logic))->$method(...(!is_array($args) ? [$args] : $args));
     }
 
 
+    /**
+     * @return void
+     */
+    private function loadBean(): void
+    {
+        $basePath = alias($this->path);
+        $dir = scandir($basePath);
+        foreach ($dir as $module) {
+            if ($module !== '.' && $module !== '..') {
+                $path = $basePath . $module . '/bean.php';
+                if (file_exists($path)) {
+                    $config = require($path);
+                    foreach ($config as $bean => $cnf) {
+                        BeanFactory::createBean($module . '.' . $bean, $cnf);
+                    }
+                }
+            }
+        }
+    }
 
 }
