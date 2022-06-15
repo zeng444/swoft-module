@@ -15,7 +15,7 @@ use Swoft\Module\Exception\ModuleException;
  * @Bean()
  * @package Swoft\Module
  */
-class Module
+class Module implements ModuleInterface
 {
 
     /**
@@ -94,14 +94,16 @@ class Module
         $basePath = alias($this->path);
         $dir = scandir($basePath);
         foreach ($dir as $module) {
-            if ($module !== '.' && $module !== '..') {
-                $path = $basePath . $module . '/bean.php';
-                if (file_exists($path)) {
-                    $config = require($path);
-                    foreach ($config as $bean => $cnf) {
-                        BeanFactory::createBean($module . '.' . $bean, $cnf);
-                    }
-                }
+            if ($module === '.' || $module === '..') {
+                continue;
+            }
+            $path = $basePath . $module . '/bean.php';
+            if (!file_exists($path)) {
+                continue;
+            }
+            $config = require($path);
+            foreach ($config as $bean => $cnf) {
+                BeanFactory::createBean($module . '.' . $bean, $cnf);
             }
         }
     }

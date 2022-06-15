@@ -33,4 +33,11 @@ interface ModuleInterface
      * @return mixed
      */
     public function call(string $module, string $logic, string $method, $args);
+
+    /**
+     * @param string $module
+     * @param string $logic
+     * @return mixed
+     */
+    public function getLogic(string $module, string $logic);
 }
