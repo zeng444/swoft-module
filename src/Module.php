@@ -5,7 +5,6 @@ namespace Swoft\Module;
 use Swoft;
 use Swoft\Bean\BeanFactory;
 use Swoft\Bean\Annotation\Mapping\Bean;
-use Swoft\Config\Annotation\Mapping\Config;
 use Swoft\Module\Exception\ModuleException;
 
 /**
@@ -19,27 +18,49 @@ class Module implements ModuleInterface
 {
 
     /**
-     * @Config("app.module")
      * @var string
      */
-    protected $path = "@app/Module/";
+    protected $path;
+
+    /**
+     * @var bool
+     */
+    protected $strict = true;
+
+    /**
+     * @var string
+     */
+    protected $autoloaderFiler = "Autoloader.php";
+
+    /**
+     * @var array
+     */
+    private $conf = [];
+
+    /**
+     * @var array
+     */
+    private $moduleVer = [];
 
     /**
      * @return void
+     * @throws ModuleException
      */
     public function init(): void
     {
+        $this->loadConf();
         $this->loadBean();
+        $this->checkDepends();
     }
-
 
     /**
      * @param string $name
+     * @param bool $strict
      * @return bool
      */
-    public function exist(string $name): bool
+    public function exist(string $name, bool $strict = true): bool
     {
-        return is_dir(@alias($this->path . $name));
+        return $strict ? isset($this->conf[$name]) : is_dir(@alias($this->path . $name));
     }
 
     /**
@@ -77,7 +98,7 @@ class Module implements ModuleInterface
     public function getLogic(string $module, string $logic)
     {
         $module = ucwords($module);
-        if (!$this->exist($module)) {
+        if (!$this->exist($module, $this->strict)) {
             throw new ModuleException("module not exist");
         }
         $class = "App\\Module\\$module\\Logic\\" . $logic;
@@ -86,7 +107,6 @@ class Module implements ModuleInterface
         }
         return Swoft::getBean($class);
     }
-
 
     /**
      * @param string $module
@@ -101,11 +121,29 @@ class Module implements ModuleInterface
         return ($this->getLogic($module, $logic))->$method(...(!is_array($args) ? [$args] : $args));
     }
 
+    /**
+     * @param string $module
+     * @return string
+     */
+    public function getModuleVer(string $module): string
+    {
+        return $this->moduleVer[$module] ?? '';
+    }
+
+    /**
+     * @param string|null $module
+     * @return array
+     */
+    public function getConfig(string $module = null): array
+    {
+        return $module ? ($this->conf[$module] ?? []) : $this->conf;
+    }
 
     /**
      * @return void
+     * @throws ModuleException
      */
-    private function loadBean(): void
+    private function loadConf(): void
     {
         $basePath = alias($this->path);
         $dir = scandir($basePath);
@@ -113,15 +151,72 @@ class Module implements ModuleInterface
             if ($module === '.' || $module === '..') {
                 continue;
             }
-            $path = $basePath . $module . '/bean.php';
+            $path = $basePath . $module . '/' . $this->autoloaderFiler;
             if (!file_exists($path)) {
                 continue;
             }
             $config = require($path);
-            foreach ($config as $bean => $cnf) {
+            // Load module version info
+            if (!isset($config['module']) || !isset($config['module']['version']) || !$config['module']['version']) {
+                throw new ModuleException("Module $module version not defined");
+            }
+            $config['module']['depends'] = $config['module']['depends'] ?? [];
+            $config['module']['verCheck'] = $config['module']['verCheck'] ?? true;
+            $this->addConfig($module, $config);
+            $this->addModuleVer($module, $config['module']['version']);
+        }
+    }
+
+    /**
+     * @return void
+     * @throws ModuleException
+     */
+    private function checkDepends(): void
+    {
+        $modules = $this->conf;
+        foreach ($modules as $configs) {
+            if (!$configs['module']['verCheck']) {
+                continue;
+            }
+            foreach ($configs['module']['depends'] as $depend => $ver) {
+                if (version_compare($this->getModuleVer($depend), $ver, '<')) {
+                    throw new ModuleException("Module $depend require version >= $ver");
+                }
+            }
+        }
+    }
+
+    /**
+     * @return void
+     */
+    private function loadBean(): void
+    {
+        $modules = $this->getConfig();
+        foreach ($modules as $module => $configs) {
+            foreach ($configs['bean'] as $bean => $cnf) {
                 BeanFactory::createBean($module . '.' . $bean, $cnf);
             }
         }
+    }
+
+    /**
+     * @param string $module
+     * @param string $ver
+     * @return void
+     */
+    private function addModuleVer(string $module, string $ver): void
+    {
+        $this->moduleVer[$module] = $ver;
+    }
+
+    /**
+     * @param string $module
+     * @param array $config
+     * @return void
+     */
+    private function addConfig(string $module, array $config): void
+    {
+        $this->conf[$module] = $config;
     }
 
 }
