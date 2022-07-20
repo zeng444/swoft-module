@@ -54,13 +54,13 @@ class Module implements ModuleInterface
     }
 
     /**
-     * @param string $name
+     * @param string $module
      * @param bool $strict
      * @return bool
      */
-    public function exist(string $name, bool $strict = true): bool
+    public function exist(string $module, bool $strict = true): bool
     {
-        return $strict ? isset($this->conf[$name]) : is_dir(@alias($this->path . $name));
+        return $strict ? isset($this->conf[$module]) : is_dir(@alias($this->path . $module));
     }
 
     /**
@@ -70,7 +70,7 @@ class Module implements ModuleInterface
      */
     public function hasBean(string $module, string $bean): bool
     {
-        $bean = $module . '.' . $bean;
+        $bean = ucfirst($module) . '.' . $bean;
         return Swoft::hasBean($bean);
     }
 
@@ -82,7 +82,7 @@ class Module implements ModuleInterface
      */
     public function getBean(string $module, string $bean)
     {
-        $bean = $module . '.' . $bean;
+        $bean = ucfirst($module) . '.' . $bean;
         if (!Swoft::hasBean($bean)) {
             throw new ModuleException('Bean not exit');
         }
@@ -97,7 +97,7 @@ class Module implements ModuleInterface
      */
     public function getLogic(string $module, string $logic)
     {
-        $module = ucwords($module);
+        $module = ucfirst($module);
         if (!$this->exist($module, $this->strict)) {
             throw new ModuleException("module not exist");
         }
@@ -127,7 +127,25 @@ class Module implements ModuleInterface
      */
     public function getModuleVer(string $module): string
     {
-        return $this->moduleVer[$module] ?? '';
+        return $this->moduleVer[ucfirst($module)] ?? '';
+    }
+
+    /**
+     * @param string $module
+     * @return string
+     */
+    public function getModuleVersion(string $module): string
+    {
+        return $this->getModuleVer($module);
+    }
+
+    /**
+     * @param string $module
+     * @return string
+     */
+    public function getModuleVersions(): array
+    {
+        return $this->moduleVer;
     }
 
     /**
@@ -136,7 +154,7 @@ class Module implements ModuleInterface
      */
     public function getConfig(string $module = null): array
     {
-        return $module ? ($this->conf[$module] ?? []) : $this->conf;
+        return $module ? ($this->conf[ucfirst($module)] ?? []) : $this->conf;
     }
 
     /**

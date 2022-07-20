@@ -13,10 +13,10 @@ interface ModuleInterface
 {
 
     /**
-     * @param string $name
+     * @param string $module
      * @return bool
      */
-    public function exist(string $name): bool;
+    public function exist(string $module): bool;
 
     /**
      * @param string $module
