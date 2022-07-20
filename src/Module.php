@@ -140,8 +140,7 @@ class Module implements ModuleInterface
     }
 
     /**
-     * @param string $module
-     * @return string
+     * @return array
      */
     public function getModuleVersions(): array
     {
